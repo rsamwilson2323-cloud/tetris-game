@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Falling Blocks – Fixed Frame</title>
+
+<style>
+    body {
+        margin: 0;
+        background: #0b0b0b;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        color: white;
+        font-family: Arial, sans-serif;
+    }
+
+    canvas {
+        background: black;
+        border: 4px solid #777;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- ✅ FRAME = COLS * BLOCK , ROWS * BLOCK -->
+<canvas id="game" width="450" height="900"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+/* ===== GRID CONFIG (PERFECT FRAME) ===== */
+const COLS = 10;
+const ROWS = 20;
+const BLOCK = 45;
+
+/* ===== COLORS ===== */
+const COLORS = [
+    null,
+    "#00ffff", "#ffff00", "#800080",
+    "#00ff00", "#ff0000", "#0000ff", "#ffa500"
+];
+
+/* ===== SHAPES ===== */
+const SHAPES = [
+    [[1,1,1,1]],
+    [[2,2],[2,2]],
+    [[0,3,0],[3,3,3]],
+    [[0,4,4],[4,4,0]],
+    [[5,5,0],[0,5,5]],
+    [[6,0,0],[6,6,6]],
+    [[0,0,7],[7,7,7]]
+];
+
+/* ===== BOARD ===== */
+function createMatrix(w, h) {
+    return Array.from({length: h}, () => Array(w).fill(0));
+}
+
+let board = createMatrix(COLS, ROWS);
+let score = 0;
+
+/* ===== DRAW ===== */
+function drawCell(x, y, value) {
+    if (value) {
+        ctx.fillStyle = COLORS[value];
+        ctx.fillRect(x * BLOCK, y * BLOCK, BLOCK, BLOCK);
+        ctx.strokeStyle = "#333";
+        ctx.strokeRect(x * BLOCK, y * BLOCK, BLOCK, BLOCK);
+    }
+}
+
+function drawBoard() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    board.forEach((row, y) =>
+        row.forEach((value, x) => drawCell(x, y, value))
+    );
+}
+
+/* ===== PLAYER ===== */
+const player = {
+    pos: {x: 0, y: 0},
+    matrix: null
+};
+
+function collide(board, player) {
+    for (let y = 0; y < player.matrix.length; y++) {
+        for (let x = 0; x < player.matrix[y].length; x++) {
+            if (player.matrix[y][x] &&
+               (board[y + player.pos.y] &&
+                board[y + player.pos.y][x + player.pos.x]) !== 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function merge(board, player) {
+    player.matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value) {
+                board[y + player.pos.y][x + player.pos.x] = value;
+            }
+        });
+    });
+}
+
+function rotate(matrix, dir) {
+    const rotated = matrix[0].map((_, i) => matrix.map(r => r[i]));
+    return dir > 0 ? rotated.map(r => r.reverse()) : rotated.reverse();
+}
+
+function sweep() {
+    outer: for (let y = ROWS - 1; y >= 0; y--) {
+        for (let x = 0; x < COLS; x++) {
+            if (board[y][x] === 0) continue outer;
+        }
+        board.splice(y, 1);
+        board.unshift(Array(COLS).fill(0));
+        score += 10;
+    }
+}
+
+function resetPlayer() {
+    player.matrix = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    player.pos.y = 0;
+    player.pos.x = (COLS / 2 | 0) -
+                   (player.matrix[0].length / 2 | 0);
+
+    if (collide(board, player)) {
+        alert("GAME OVER\nScore: " + score);
+        board = createMatrix(COLS, ROWS);
+        score = 0;
+    }
+}
+
+/* ===== CONTROLS ===== */
+function moveX(amount) {
+    player.pos.x += amount;
+    if (collide(board, player)) player.pos.x -= amount;
+}
+
+function drop() {
+    player.pos.y++;
+    if (collide(board, player)) {
+        player.pos.y--;
+        merge(board, player);
+        sweep();
+        resetPlayer();
+    }
+}
+
+function hardDrop() {
+    while (!collide(board, player)) player.pos.y++;
+    player.pos.y--;
+    merge(board, player);
+    sweep();
+    resetPlayer();
+}
+
+function rotatePlayer(dir) {
+    const old = player.matrix;
+    player.matrix = rotate(player.matrix, dir);
+    if (collide(board, player)) player.matrix = old;
+}
+
+document.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") moveX(-1);
+    if (e.key === "ArrowRight") moveX(1);
+    if (e.key === "a") moveX(-2);
+    if (e.key === "d") moveX(2);
+    if (e.key === "ArrowDown") drop();
+    if (e.key === " ") hardDrop();
+    if (e.key === "ArrowUp") rotatePlayer(1);
+    if (e.key === "z") rotatePlayer(-1);
+});
+
+/* ===== LOOP ===== */
+let dropCounter = 0;
+let dropInterval = 600;
+let lastTime = 0;
+
+function update(time = 0) {
+    const delta = time - lastTime;
+    lastTime = time;
+    dropCounter += delta;
+
+    if (dropCounter > dropInterval) {
+        drop();
+        dropCounter = 0;
+    }
+
+    drawBoard();
+    player.matrix.forEach((row, y) =>
+        row.forEach((value, x) =>
+            drawCell(x + player.pos.x, y + player.pos.y, value)
+        )
+    );
+
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score, 10, 25);
+
+    requestAnimationFrame(update);
+}
+
+resetPlayer();
+update();
+</script>
+
+</body>
+</html>
