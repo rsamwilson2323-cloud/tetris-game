@@ -28,7 +28,7 @@ A classic Tetris-style Falling Blocks game built using HTML, CSS, and JavaScript
 ## 📂 Project Structure
 
     tetris-game/
-    │── falling blocks.html
+    │── tetris game.html
     │── README.md
     │── LICENSE
 
@@ -52,18 +52,18 @@ cd tetris-game
 ### 3️⃣ Open the project
 
 Double click:
-falling blocks.html
+tetris game.html
 
 OR use command:
 
 Windows:
-start "falling blocks.html"
+start "tetris game.html"
 
 Mac:
-open "falling blocks.html"
+open "tetris game.html"
 
 Linux:
-xdg-open "falling blocks.html"
+xdg-open "tetris game.html"
 
 ---
 
@@ -71,11 +71,6 @@ xdg-open "falling blocks.html"
 
 - ⬅️ Arrow Left → Move left  
 - ➡️ Arrow Right → Move right  
-- ⬇️ Arrow Down → Soft drop  
-- ⬆️ Arrow Up → Rotate  
-- ⬜ Space → Hard drop  
-- A / D → Fast horizontal move  
-- Z → Rotate opposite direction  
 
 ---
 
